@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hitung Selamatan</title>
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1e3a8a">
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --accent: #facc15;
+      --bg: #f9fafb;
+      --text: #374151;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      width: 90%;
+      max-width: 800px;
+      height: 100%;
+      background: #ffffff;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      font-weight: 600;
+      color: var(--primary);
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    @media (min-width: 640px) {
+      .controls {
+        flex-direction: row;
+        justify-content: center;
+        align-items: center;
+      }
+    }
+    input[type="date"] {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.25rem;
+    }
+    button {
+      padding: 0.6rem 1.4rem;
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #1e40af;
+    }
+    .table-container {
+      flex: 1;
+      overflow-y: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: center;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    th {
+      background: var(--primary);
+      color: #ffffff;
+      font-weight: 600;
+    }
+    tr:nth-child(even) {
+      background: #f3f4f6;
+    }
+    tr.today {
+      background: rgba(250, 204, 21, 0.2) !important;
+    }
+    .footer {
+      text-align: center;
+      font-size: 0.875rem;
+      color: #6b7280;
+      padding-top: 1rem;
+      border-top: 1px solid #e5e7eb;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Perhitungan Selamatan</h1>
+    <div class="controls">
+      <label for="deathDate">Pilih tanggal meninggal:</label>
+      <input type="date" id="deathDate" />
+      <button id="generate">Tampilkan Tabel</button>
+    </div>
+
+    <div class="table-container">
+      <table id="resultTable">
+        <thead>
+          <tr>
+            <th>Selamatan</th>
+            <th>Pasaran</th>
+            <th>Tanggal</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Baris akan di-generate di sini -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="footer">
+      Dibuat oleh [Teguh Tri Wibowo - Jembayat] © 2025
+    </div>
+  </div>
+
+  <script>
+    // Pendaftaran service worker untuk PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(reg => console.log('Service Worker terdaftar:', reg.scope))
+          .catch(err => console.warn('Service Worker gagal:', err));
+      });
+    }
+
+    const pasaranJawa = ["Legi", "Pahing", "Pon", "Wage", "Kliwon"];
+    function getDayName(date) {
+      const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+      return days[date.getDay()];
+    }
+    function getPasaranJawa(date) {
+      const y = date.getFullYear();
+      const m = date.getMonth() + 1;
+      const d = date.getDate();
+      const a = Math.floor((14 - m) / 12);
+      const y0 = y + 4800 - a;
+      const m0 = m + 12 * a - 3;
+      const jd = d
+        + Math.floor((153 * m0 + 2) / 5)
+        + 365 * y0
+        + Math.floor(y0 / 4)
+        - Math.floor(y0 / 100)
+        + Math.floor(y0 / 400)
+        - 32045;
+      const offset = 5;
+      return pasaranJawa[(jd + offset) % 5];
+    }
+    const selamatans = [
+      { name: "Hari meninggal", days: 0 },
+      { name: "3 hari", days: 2 },
+      { name: "7 hari", days: 6 },
+      { name: "40 hari", days: 39 },
+      { name: "100 hari", days: 99 },
+      { name: "Pendhak 1", days: 353 },
+      { name: "Pendhak 2", days: 707 },
+      { name: "1000 hari", days: 999 }
+    ];
+    document.getElementById("generate").addEventListener("click", () => {
+      const input = document.getElementById("deathDate").value;
+      if (!input) { alert("Silakan pilih tanggal meninggal dulu."); return; }
+      const deathDate = new Date(input);
+      const today = new Date();
+      const tbody = document.querySelector("#resultTable tbody");
+      tbody.innerHTML = "";
+      selamatans.forEach(item => {
+        const eventDate = new Date(deathDate.getTime() + item.days * 86400000);
+        const nasional = getDayName(eventDate);
+        const jawa = getPasaranJawa(eventDate);
+        const pasaran = `${nasional} ${jawa}`;
+        let status = eventDate.toDateString() === today.toDateString() ? "Hari ini" :
+                     eventDate < today ? "Lewat" : "Belum";
+        const tr = document.createElement("tr");
+        if (status === "Hari ini") tr.classList.add("today");
+        tr.innerHTML = `
+          <td>${item.name}</td>
+          <td>${pasaran}</td>
+          <td>${eventDate.toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })}</td>
+          <td>${status}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    });
+  </script>
+</body>
+</html>
