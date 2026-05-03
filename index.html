@@ -1,214 +1,664 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Hitung Selamatan</title>
-  <!-- Google Font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <!-- PWA Manifest -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#1e3a8a">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0d1117" />
+  <meta name="description" content="Hitung jadwal selamatan tradisi Jawa berdasarkan tanggal meninggal" />
   <style>
     :root {
-      --primary: #1e3a8a;
-      --accent: #facc15;
-      --bg: #f9fafb;
-      --text: #374151;
+      --gold: #c9a84c;
+      --gold-light: #e8c96d;
+      --gold-dim: rgba(201,168,76,0.15);
+      --bg: #0d1117;
+      --bg2: #131920;
+      --bg3: #1a2332;
+      --surface: rgba(255,255,255,0.04);
+      --surface-hover: rgba(255,255,255,0.07);
+      --border: rgba(201,168,76,0.2);
+      --border-dim: rgba(255,255,255,0.07);
+      --text: #e8e0d0;
+      --text-muted: #8a9ab0;
+      --text-dim: #4a5a6a;
+      --green: #4caf7d;
+      --green-bg: rgba(76,175,125,0.12);
+      --amber: #e8b84b;
+      --amber-bg: rgba(232,184,75,0.12);
+      --red: #e07070;
+      --red-bg: rgba(224,112,112,0.1);
+      --radius: 16px;
+      --radius-sm: 10px;
     }
-    * { box-sizing: border-box; }
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'DM Sans', sans-serif;
       background: var(--bg);
       color: var(--text);
+      min-height: 100dvh;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
+      overflow-x: hidden;
     }
-    .container {
+
+    /* Decorative background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(201,168,76,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(30,58,138,0.15) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Batik-inspired SVG pattern overlay */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c9a84c' fill-opacity='0.025'%3E%3Cpath d='M30 30m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0M10 10m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M50 10m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M10 50m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M50 50m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 680px;
+      padding: 1.5rem 1rem 3rem;
       display: flex;
       flex-direction: column;
-      width: 90%;
-      max-width: 800px;
-      height: 100%;
-      background: #ffffff;
-      padding: 1.5rem;
-      border-radius: 0.5rem;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      gap: 1.25rem;
     }
-    h1 {
-      font-weight: 600;
-      color: var(--primary);
+
+    /* Header */
+    .header {
       text-align: center;
-      margin-bottom: 1rem;
+      padding: 1.5rem 0 0.5rem;
     }
-    .controls {
+
+    .header-ornament {
       display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 0.75rem;
     }
-    @media (min-width: 640px) {
-      .controls {
-        flex-direction: row;
-        justify-content: center;
-        align-items: center;
-      }
+
+    .ornament-line {
+      height: 1px;
+      width: 48px;
+      background: linear-gradient(90deg, transparent, var(--gold));
     }
-    input[type="date"] {
-      flex: 1;
-      padding: 0.5rem;
-      border: 1px solid #d1d5db;
-      border-radius: 0.25rem;
+
+    .ornament-line.right {
+      background: linear-gradient(90deg, var(--gold), transparent);
     }
-    button {
-      padding: 0.6rem 1.4rem;
-      background: var(--primary);
-      color: #ffffff;
-      border: none;
-      border-radius: 0.25rem;
-      cursor: pointer;
+
+    .ornament-diamond {
+      width: 6px; height: 6px;
+      background: var(--gold);
+      transform: rotate(45deg);
+      flex-shrink: 0;
+    }
+
+    .header h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2rem, 6vw, 3rem);
       font-weight: 600;
-      transition: background 0.3s;
+      color: var(--text);
+      letter-spacing: 0.02em;
+      line-height: 1.1;
     }
-    button:hover {
-      background: #1e40af;
+
+    .header h1 span { color: var(--gold); }
+
+    .header p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 0.5rem;
     }
-    .table-container {
+
+    /* Input card */
+    .input-card {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      backdrop-filter: blur(20px);
+    }
+
+    .input-label {
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--gold);
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .input-wrapper {
       flex: 1;
-      overflow-y: auto;
+      position: relative;
     }
+
+    input[type="date"] {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      background: rgba(255,255,255,0.05);
+      border: 0.5px solid var(--border-dim);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      color-scheme: dark;
+    }
+
+    input[type="date"]:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(201,168,76,0.4);
+    }
+
+    input[type="date"]:focus {
+      border-color: var(--gold);
+      background: rgba(201,168,76,0.05);
+    }
+
+    .btn-generate {
+      padding: 0.7rem 1.4rem;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: #0d1117;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      white-space: nowrap;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-generate:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-generate:active { transform: scale(0.97); }
+
+    /* Countdown banner */
+    .countdown-banner {
+      display: none;
+      background: var(--gold-dim);
+      border: 0.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      backdrop-filter: blur(20px);
+      animation: fadeSlide 0.4s ease;
+    }
+
+    .countdown-banner.visible { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+    .countdown-icon {
+      width: 40px; height: 40px;
+      background: var(--gold-dim);
+      border: 0.5px solid var(--border);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .countdown-info { flex: 1; min-width: 120px; }
+    .countdown-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gold); font-weight: 500; }
+    .countdown-name { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 600; color: var(--text); }
+    .countdown-date { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+
+    .countdown-days {
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .countdown-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.5rem;
+      font-weight: 600;
+      color: var(--gold-light);
+      line-height: 1;
+    }
+
+    .countdown-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    /* Table card */
+    .table-card {
+      display: none;
+      background: var(--surface);
+      border: 0.5px solid var(--border-dim);
+      border-radius: var(--radius);
+      overflow: hidden;
+      backdrop-filter: blur(20px);
+      animation: fadeSlide 0.4s ease 0.1s both;
+    }
+
+    .table-card.visible { display: block; }
+
+    .table-header {
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 0.5px solid var(--border-dim);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .table-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .table-subtitle { font-size: 0.75rem; color: var(--text-muted); margin-top: 1px; }
+
+    .btn-share {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0.4rem 0.9rem;
+      background: transparent;
+      border: 0.5px solid var(--border);
+      border-radius: 20px;
+      color: var(--gold);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-share:hover { background: var(--gold-dim); }
+    .btn-share svg { width: 13px; height: 13px; }
+
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 1rem;
+      min-width: 400px;
     }
-    th, td {
-      padding: 0.75rem 1rem;
-      text-align: center;
-      border-bottom: 1px solid #e5e7eb;
+
+    thead tr {
+      border-bottom: 0.5px solid var(--border-dim);
     }
+
     th {
-      background: var(--primary);
-      color: #ffffff;
-      font-weight: 600;
+      padding: 0.65rem 1rem;
+      text-align: left;
+      font-size: 0.65rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
     }
-    tr:nth-child(even) {
-      background: #f3f4f6;
+
+    td {
+      padding: 0.85rem 1rem;
+      font-size: 0.85rem;
+      border-bottom: 0.5px solid var(--border-dim);
+      vertical-align: middle;
     }
-    tr.today {
-      background: rgba(250, 204, 21, 0.2) !important;
+
+    tr:last-child td { border-bottom: none; }
+
+    tr { transition: background 0.15s; }
+    tr:hover td { background: var(--surface-hover); }
+
+    tr.today td { background: rgba(201,168,76,0.05); }
+    tr.today td:first-child {
+      border-left: 2px solid var(--gold);
     }
+
+    .td-name {
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .td-pasaran { color: var(--text-muted); font-size: 0.8rem; }
+    .td-date { color: var(--text); white-space: nowrap; }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .pill-dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .pill-lewat { background: var(--green-bg); color: var(--green); }
+    .pill-lewat .pill-dot { background: var(--green); }
+
+    .pill-today { background: var(--amber-bg); color: var(--amber); }
+    .pill-today .pill-dot { background: var(--amber); animation: pulse 1.5s ease-in-out infinite; }
+
+    .pill-belum { background: rgba(138,154,176,0.1); color: var(--text-muted); }
+    .pill-belum .pill-dot { background: var(--text-dim); }
+
+    /* Days badge for upcoming */
+    .days-badge {
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    /* Share toast */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--bg3);
+      border: 0.5px solid var(--border);
+      color: var(--text);
+      padding: 0.65rem 1.2rem;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      z-index: 100;
+      white-space: nowrap;
+      backdrop-filter: blur(20px);
+    }
+
+    .toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* Footer */
     .footer {
       text-align: center;
-      font-size: 0.875rem;
-      color: #6b7280;
-      padding-top: 1rem;
-      border-top: 1px solid #e5e7eb;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      letter-spacing: 0.05em;
+      padding-top: 0.5rem;
     }
+
+    .footer span { color: var(--gold); opacity: 0.7; }
+
+    /* Animations */
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .page { padding: 1rem 0.75rem 2.5rem; gap: 1rem; }
+      .input-row { flex-direction: column; }
+      .btn-generate { width: 100%; text-align: center; padding: 0.75rem; }
+      .header h1 { font-size: 2rem; }
+      .countdown-days { width: 100%; text-align: left; display: flex; align-items: center; gap: 8px; }
+      .countdown-num { font-size: 2rem; }
+      th { padding: 0.6rem 0.75rem; }
+      td { padding: 0.75rem 0.75rem; font-size: 0.82rem; }
+    }
+
+    @media (min-width: 640px) {
+      .page { padding: 2rem 1.5rem 3.5rem; }
+      .input-card { padding: 1.5rem; }
+    }
+
+    @media (min-width: 768px) {
+      .page { padding: 2.5rem 0 4rem; }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { height: 4px; width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Perhitungan Selamatan</h1>
-    <div class="controls">
-      <label for="deathDate">Pilih tanggal meninggal:</label>
-      <input type="date" id="deathDate" />
-      <button id="generate">Tampilkan Tabel</button>
+
+  <div class="page">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-ornament">
+        <div class="ornament-line"></div>
+        <div class="ornament-diamond"></div>
+        <div class="ornament-line right"></div>
+      </div>
+      <h1>Perhitungan <span>Selamatan</span></h1>
+      <p>Tradisi Tahlilan Jawa &middot; Penanda Waktu Peringatan</p>
+    </header>
+
+    <!-- Input card -->
+    <div class="input-card">
+      <label class="input-label" for="deathDate">Tanggal Meninggal</label>
+      <div class="input-row">
+        <div class="input-wrapper">
+          <input type="date" id="deathDate" />
+        </div>
+        <button class="btn-generate" id="generate">Tampilkan Jadwal</button>
+      </div>
     </div>
 
-    <div class="table-container">
-      <table id="resultTable">
-        <thead>
-          <tr>
-            <th>Selamatan</th>
-            <th>Pasaran</th>
-            <th>Tanggal</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Baris akan di-generate di sini -->
-        </tbody>
-      </table>
+    <!-- Countdown banner -->
+    <div class="countdown-banner" id="countdownBanner">
+      <div class="countdown-icon">☽</div>
+      <div class="countdown-info">
+        <div class="countdown-title">Selamatan Berikutnya</div>
+        <div class="countdown-name" id="nextName">—</div>
+        <div class="countdown-date" id="nextDate">—</div>
+      </div>
+      <div class="countdown-days">
+        <div class="countdown-num" id="nextDays">—</div>
+        <div class="countdown-label">hari lagi</div>
+      </div>
     </div>
 
-    <div class="footer">
-      Dibuat oleh [Teguh Tri Wibowo - Jembayat] © 2025
+    <!-- Table card -->
+    <div class="table-card" id="tableCard">
+      <div class="table-header">
+        <div>
+          <div class="table-title">Jadwal Selamatan</div>
+          <div class="table-subtitle" id="tableSubtitle">—</div>
+        </div>
+        <button class="btn-share" id="shareBtn" onclick="shareData()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+            <polyline points="16 6 12 2 8 6"/>
+            <line x1="12" y1="2" x2="12" y2="15"/>
+          </svg>
+          Bagikan
+        </button>
+      </div>
+      <div class="table-scroll">
+        <table id="resultTable">
+          <thead>
+            <tr>
+              <th>Selamatan</th>
+              <th>Hari Pasaran</th>
+              <th>Tanggal</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
+
+    <footer class="footer">
+      Dibuat oleh <span>Ethan D' Schnee</span> &copy; 2025
+    </footer>
+
   </div>
 
+  <div class="toast" id="toast"></div>
+
   <script>
-    // Pendaftaran service worker untuk PWA
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/service-worker.js')
-          .then(reg => console.log('Service Worker terdaftar:', reg.scope))
-          .catch(err => console.warn('Service Worker gagal:', err));
+          .then(r => console.log('SW:', r.scope))
+          .catch(e => console.warn('SW fail:', e));
       });
     }
 
-    const pasaranJawa = ["Legi", "Pahing", "Pon", "Wage", "Kliwon"];
-    function getDayName(date) {
-      const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
-      return days[date.getDay()];
-    }
-    function getPasaranJawa(date) {
-      const y = date.getFullYear();
-      const m = date.getMonth() + 1;
-      const d = date.getDate();
+    const pasaranJawa = ['Legi', 'Pahing', 'Pon', 'Wage', 'Kliwon'];
+    const hariJawa = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+    function getPasaran(date) {
+      const y = date.getFullYear(), m = date.getMonth() + 1, d = date.getDate();
       const a = Math.floor((14 - m) / 12);
-      const y0 = y + 4800 - a;
-      const m0 = m + 12 * a - 3;
-      const jd = d
-        + Math.floor((153 * m0 + 2) / 5)
-        + 365 * y0
-        + Math.floor(y0 / 4)
-        - Math.floor(y0 / 100)
-        + Math.floor(y0 / 400)
-        - 32045;
-      const offset = 5;
-      return pasaranJawa[(jd + offset) % 5];
+      const y0 = y + 4800 - a, m0 = m + 12 * a - 3;
+      const jd = d + Math.floor((153 * m0 + 2) / 5) + 365 * y0 +
+        Math.floor(y0 / 4) - Math.floor(y0 / 100) + Math.floor(y0 / 400) - 32045;
+      return pasaranJawa[(jd + 5) % 5];
     }
+
+    function getHari(date) { return hariJawa[date.getDay()]; }
+
+    function formatDate(date) {
+      return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    function daysBetween(a, b) {
+      return Math.round((b - a) / 86400000);
+    }
+
     const selamatans = [
-      { name: "Hari meninggal", days: 0 },
-      { name: "3 hari", days: 2 },
-      { name: "7 hari", days: 6 },
-      { name: "40 hari", days: 39 },
-      { name: "100 hari", days: 99 },
-      { name: "Pendhak 1", days: 353 },
-      { name: "Pendhak 2", days: 707 },
-      { name: "1000 hari", days: 999 }
+      { name: 'Hari meninggal', days: 0 },
+      { name: '3 hari',         days: 2 },
+      { name: '7 hari',         days: 6 },
+      { name: '40 hari',        days: 39 },
+      { name: '100 hari',       days: 99 },
+      { name: 'Pendhak 1',      days: 353 },
+      { name: 'Pendhak 2',      days: 707 },
+      { name: '1000 hari',      days: 999 },
     ];
-    document.getElementById("generate").addEventListener("click", () => {
-      const input = document.getElementById("deathDate").value;
-      if (!input) { alert("Silakan pilih tanggal meninggal dulu."); return; }
-      const deathDate = new Date(input);
-      const today = new Date();
-      const tbody = document.querySelector("#resultTable tbody");
-      tbody.innerHTML = "";
+
+    let shareText = '';
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    function shareData() {
+      if (navigator.share && /Mobi/i.test(navigator.userAgent)) {
+        navigator.share({ title: 'Jadwal Selamatan', text: shareText }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(shareText)
+          .then(() => showToast('✓ Jadwal disalin ke clipboard'))
+          .catch(() => showToast('Tidak dapat menyalin teks'));
+      }
+    }
+
+    document.getElementById('generate').addEventListener('click', () => {
+      const input = document.getElementById('deathDate').value;
+      if (!input) { showToast('Pilih tanggal terlebih dahulu'); return; }
+
+      const death = new Date(input + 'T00:00:00');
+      const today = new Date(); today.setHours(0,0,0,0);
+      const tbody = document.querySelector('#resultTable tbody');
+      tbody.innerHTML = '';
+
+      const lines = [`📅 Jadwal Selamatan\nAlmarhum/Almarhumah: ${formatDate(death)}\n`];
+      let nextEvent = null;
+
       selamatans.forEach(item => {
-        const eventDate = new Date(deathDate.getTime() + item.days * 86400000);
-        const nasional = getDayName(eventDate);
-        const jawa = getPasaranJawa(eventDate);
-        const pasaran = `${nasional} ${jawa}`;
-        let status = eventDate.toDateString() === today.toDateString() ? "Hari ini" :
-                     eventDate < today ? "Lewat" : "Belum";
-        const tr = document.createElement("tr");
-        if (status === "Hari ini") tr.classList.add("today");
+        const ev = new Date(death.getTime() + item.days * 86400000);
+        const hari = getHari(ev);
+        const pasaran = getPasaran(ev);
+        const pasaranStr = `${hari} ${pasaran}`;
+        const diff = daysBetween(today, ev);
+
+        let status, pillClass, pillText, daysInfo = '';
+        if (ev.toDateString() === today.toDateString()) {
+          status = 'today'; pillClass = 'pill-today'; pillText = 'Hari ini';
+          if (!nextEvent) nextEvent = { name: item.name, date: ev, days: 0 };
+        } else if (ev < today) {
+          status = 'lewat'; pillClass = 'pill-lewat'; pillText = 'Sudah lewat';
+        } else {
+          status = 'belum'; pillClass = 'pill-belum'; pillText = 'Belum';
+          daysInfo = `${diff} hari lagi`;
+          if (!nextEvent) nextEvent = { name: item.name, date: ev, days: diff };
+        }
+
+        lines.push(`• ${item.name}: ${pasaranStr}, ${formatDate(ev)} – ${pillText}`);
+
+        const tr = document.createElement('tr');
+        if (status === 'today') tr.classList.add('today');
+
         tr.innerHTML = `
-          <td>${item.name}</td>
-          <td>${pasaran}</td>
-          <td>${eventDate.toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })}</td>
-          <td>${status}</td>
-        `;
+          <td class="td-name">${item.name}</td>
+          <td class="td-pasaran">${pasaranStr}</td>
+          <td class="td-date">${formatDate(ev)}</td>
+          <td>
+            <span class="pill ${pillClass}">
+              <span class="pill-dot"></span>${pillText}
+            </span>
+            ${daysInfo ? `<div class="days-badge">${daysInfo}</div>` : ''}
+          </td>`;
         tbody.appendChild(tr);
       });
+
+      shareText = lines.join('\n');
+
+      // Subtitle
+      document.getElementById('tableSubtitle').textContent =
+        `Meninggal: ${formatDate(death)} (${getHari(death)} ${getPasaran(death)})`;
+
+      // Countdown
+      const banner = document.getElementById('countdownBanner');
+      if (nextEvent) {
+        document.getElementById('nextName').textContent = nextEvent.name;
+        document.getElementById('nextDate').textContent = formatDate(nextEvent.date) +
+          ' — ' + getHari(nextEvent.date) + ' ' + getPasaran(nextEvent.date);
+        document.getElementById('nextDays').textContent =
+          nextEvent.days === 0 ? '0' : nextEvent.days;
+        banner.classList.add('visible');
+      } else {
+        banner.classList.remove('visible');
+      }
+
+      document.getElementById('tableCard').classList.add('visible');
+      document.getElementById('tableCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
   </script>
 </body>
